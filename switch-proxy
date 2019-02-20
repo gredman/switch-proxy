@@ -1,9 +1,22 @@
 #! /bin/sh
 GRADLE_PROPERTIES=$HOME/.gradle/gradle.properties
-SERVICE=$(networksetup -listnetworkserviceorder | grep '^(1)' | sed 's/^(1) //')
+
+SERVICE=$( networksetup -listnetworkserviceorder \
+    | egrep '^\(\d+\)' \
+    | sed -E 's/^\([0-9]+\) //' \
+    | while read CANDIDATE
+    do
+        if networksetup -getinfo "$CANDIDATE" | grep '^IP address' > /dev/null
+        then
+            echo $CANDIDATE
+            break
+        fi
+    done
+)
+
 if [ "$SERVICE" = "" ];
 then
-	exit 1
+    exit 1
 fi
 
 if networksetup -getsecurewebproxy "$SERVICE" | grep "^Enabled: Yes$" > /dev/null
