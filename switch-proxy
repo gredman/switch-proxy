@@ -1,0 +1,46 @@
+#! /bin/sh
+GRADLE_PROPERTIES=$HOME/.gradle/gradle.properties
+SERVICE=$(networksetup -listnetworkserviceorder | grep '^(1)' | sed 's/^(1) //')
+if [ "$SERVICE" = "" ];
+then
+	exit 1
+fi
+
+if networksetup -getsecurewebproxy "$SERVICE" | grep "^Enabled: Yes$" > /dev/null
+then
+	SECURE_WEB_PROXY_SERVER=$(networksetup -getsecurewebproxy "$SERVICE" | awk '/^Server:/ { print $2 }')
+	SECURE_WEB_PROXY_PORT=$(networksetup -getsecurewebproxy "$SERVICE" | awk '/^Port:/ { print $2 }')
+fi
+	
+if networksetup -getwebproxy "$SERVICE" | grep "^Enabled: Yes$" > /dev/null
+then
+	WEB_PROXY_SERVER=$(networksetup -getwebproxy "$SERVICE" | awk '/^Server:/ { print $2 }')
+	WEB_PROXY_PORT=$(networksetup -getwebproxy "$SERVICE" | awk '/^Port:/ { print $2 }')
+fi
+
+# update git config
+PREFERRED_PROXY_SERVER=${SECURE_WEB_PROXY_SERVER:-${WEB_PROXY_SERVER}}
+PREFERRED_PROXY_PORT=${SECURE_WEB_PROXY_PORT:-${WEB_PROXY_PORT}}
+git config --unset-all --global http.proxy
+if [ "$PREFERRED_PROXY_SERVER" != "" -a "$PREFERRED_PROXY_PORT" != "" ];
+then
+	git config --add --global http.proxy http://$PREFERRED_PROXY_SERVER:$PREFERRED_PROXY_PORT
+fi
+
+# update gradle config
+TEMP_GRADLE_PROPERTIES=$( mktemp )
+egrep -v '^https?\.proxy(Host|Port)' < $GRADLE_PROPERTIES > $TEMP_GRADLE_PROPERTIES
+echo http.proxyHost=$WEB_PROXY_SERVER >> $TEMP_GRADLE_PROPERTIES
+echo http.proxyPort=$WEB_PROXY_PORT >> $TEMP_GRADLE_PROPERTIES
+echo https.proxyHost=$SECURE_WEB_PROXY_PORT >> $TEMP_GRADLE_PROPERTIES
+echo https.proxyPort=$SECURE_WEB_PROXY_PORT >> $TEMP_GRADLE_PROPERTIES
+mv $TEMP_GRADLE_PROPERTIES $GRADLE_PROPERTIES
+
+# show notification
+if [ "$PREFERRED_PROXY_SERVER" != "" -a "$PREFERRED_PROXY_PORT" != "" ];
+then
+	PROXY_DESCRIPTION=$PREFERRED_PROXY_SERVER:$PREFERRED_PROXY_PORT
+else
+	PROXY_DESCRIPTION=none
+fi
+osascript -e "display notification \"$PROXY_DESCRIPTION\" with title \"Proxy set\""
