@@ -1,5 +1,6 @@
 #! /bin/sh
 GRADLE_PROPERTIES=$HOME/.gradle/gradle.properties
+CURLRC=$HOME/.curlrc
 
 SERVICE=$( networksetup -listnetworkserviceorder \
     | egrep '^\(\d+\)' \
@@ -48,6 +49,15 @@ echo http.proxyPort=$WEB_PROXY_PORT >> $TEMP_GRADLE_PROPERTIES
 echo https.proxyHost=$SECURE_WEB_PROXY_SERVER >> $TEMP_GRADLE_PROPERTIES
 echo https.proxyPort=$SECURE_WEB_PROXY_PORT >> $TEMP_GRADLE_PROPERTIES
 mv $TEMP_GRADLE_PROPERTIES $GRADLE_PROPERTIES
+
+# update curlrc
+TEMP_CURLRC=$( mktemp )
+egrep -v '^proxy =' < $CURLRC > $TEMP_CURLRC
+if [ "$PREFERRED_PROXY_SERVER" != "" -a "PREFERRED_PROXY_PORT" != "" ];
+then
+	echo "proxy = ${PREFERRED_PROXY_SERVER}:${PREFERRED_PROXY_PORT}" >> $TEMP_CURLRC
+fi
+mv $TEMP_CURLRC $CURLRC
 
 # show notification
 if [ "$PREFERRED_PROXY_SERVER" != "" -a "$PREFERRED_PROXY_PORT" != "" ];
