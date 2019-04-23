@@ -7,7 +7,8 @@ SERVICE=$( networksetup -listnetworkserviceorder \
     | sed -E 's/^\([0-9]+\) //' \
     | while read CANDIDATE
     do
-        if networksetup -getinfo "$CANDIDATE" | grep '^IP address' > /dev/null
+        if networksetup -getinfo "$CANDIDATE" | grep '^IP address' > /dev/null \
+			&& networksetup -getinfo "$CANDIDATE" | grep 'Router: [0-9]' > /dev/null
         then
             echo $CANDIDATE
             break
