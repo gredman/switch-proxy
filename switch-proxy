@@ -10,7 +10,7 @@ SERVICE=$( networksetup -listnetworkserviceorder \
         if networksetup -getinfo "$CANDIDATE" | grep '^IP address' > /dev/null \
 			&& networksetup -getinfo "$CANDIDATE" | grep 'Router: [0-9]' > /dev/null
         then
-            echo $CANDIDATE
+            echo "$CANDIDATE"
             break
         fi
     done
