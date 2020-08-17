@@ -12,6 +12,10 @@ SERVICE=$( networksetup -listnetworkserviceorder \
         then
             echo "$CANDIDATE"
             break
+		elif [ "$( networksetup -showpppoestatus "$CANDIDATE" )" = 'connected' ]
+		then
+			echo "$CANDIDATE"
+			break
         fi
     done
 )
