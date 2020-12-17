@@ -64,6 +64,14 @@ then
 fi
 mv $TEMP_CURLRC $CURLRC
 
+# update npm
+if [ "$PREFERRED_PROXY_SERVER" != "" -a "PREFERRED_PROXY_PORT" != "" ];
+then
+	npm config set proxy "http://${PREFERRED_PROXY_SERVER}:${PREFERRED_PROXY_PORT}"
+else
+	npm config delete proxy
+fi
+
 # show notification
 if [ "$PREFERRED_PROXY_SERVER" != "" -a "$PREFERRED_PROXY_PORT" != "" ];
 then
